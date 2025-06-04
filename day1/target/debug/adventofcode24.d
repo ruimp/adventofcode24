@@ -1,1 +1,1 @@
-/Users/rmp/Projects/adventofcode24/target/debug/adventofcode24: /Users/rmp/Projects/adventofcode24/src/main.rs
+/Users/rmp/Projects/adventofcode24/day1/target/debug/adventofcode24: /Users/rmp/Projects/adventofcode24/day1/src/main.rs

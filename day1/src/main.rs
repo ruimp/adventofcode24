@@ -44,7 +44,7 @@ fn dist(a: &Vec<i32>, b: &Vec<i32>) -> i32 {
     a_sorted
         .iter()
         .zip(b_sorted.iter())
-        .map(|(&x, &y)| (x - y).abs())
+        .map(|(x, y)| (x - y).abs())
         .sum()
 }
 
