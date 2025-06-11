@@ -34,14 +34,14 @@ fn dist(a: &Vec<usize>, b: &Vec<usize>) -> usize {
     let mut b = b.clone();
     a.sort();
     b.sort();
+
+    // sum of differences |x - y| for (x, y) in zip(a, b)
     a.iter().zip(b.iter()).map(|(x, y)| x.abs_diff(*y)).sum()
 }
 
 fn simi(a: &Vec<usize>, b: &Vec<usize>) -> usize {
+    // for x in a, sum x for each y in b such that y = x
     a.iter()
-        .filter_map(|x| match Some(b.iter().filter(|&y| y == x).count()) {
-            Some(count) => Some(count * x),
-            _ => None,
-        })
+        .filter_map(|x| Some(x * b.iter().filter(|&y| y == x).count()))
         .sum()
 }
