@@ -2,10 +2,11 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Result};
 
 fn main() -> Result<()> {
+    let file_path = String::from("faulty_input.txt");
     // let file_path = String::from("test_input.txt");
-    let file_path = String::from("input.txt");
+    // let file_path = String::from("input.txt");
 
-    let (a, b) = get_file(file_path)?;
+    let (a, b) = read_file(file_path)?;
     let similarity = simi(&a, &b);
     let distance = dist(&a, &b);
     println!("Distance: {}", distance);
@@ -13,7 +14,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_file(file_path: String) -> Result<(Vec<usize>, Vec<usize>)> {
+fn read_file(file_path: String) -> Result<(Vec<usize>, Vec<usize>)> {
     let file = File::open(file_path)?;
     let buf_reader = BufReader::new(file);
     let mut a: Vec<usize> = Vec::new();
@@ -21,7 +22,13 @@ fn get_file(file_path: String) -> Result<(Vec<usize>, Vec<usize>)> {
     for line in buf_reader.lines() {
         let nums: Vec<usize> = line?
             .split_whitespace()
-            .filter_map(|s| s.parse::<usize>().ok())
+            .filter_map(|s| match s.parse::<usize>() {
+                Ok(s) => Some(s),
+                Err(_) => {
+                    println!("Skipping line with invalid input: {:?}", s);
+                    Some(0)
+                }
+            })
             .collect();
         a.push(nums[0]);
         b.push(nums[1]);
