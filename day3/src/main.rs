@@ -7,8 +7,8 @@ fn main() -> Result<()> {
     let data = read_file(file_path)?;
     let total = parse(&data);
     println!("Total: {:?}", total);
-    let chunks = val_split(&data);
-    let valid_total = val_parse(chunks);
+    let valid_chunks = split_chunks(&data);
+    let valid_total = val_parse(valid_chunks);
     println!("Valid total: {:?}", valid_total);
     Ok(())
 }
@@ -18,48 +18,44 @@ fn read_file(s: String) -> Result<String> {
     let file = File::open(s)?;
     let buffer = BufReader::new(file);
     for line in buffer.lines() {
-        let line = line?;
-        content += &line;
+        content += &line?;
     }
     Ok(content)
 }
 
-fn mul(s: &str) -> Option<u32> {
+fn mul(s: &str) -> Option<usize> {
     let (x, rest) = s.split_once(",")?;
-    let x = x.parse::<u32>().ok()?;
+    let x = x.parse::<usize>().ok()?;
     let (y, _) = rest.split_once(")")?;
-    let y = y.parse::<u32>().ok()?;
+    let y = y.parse::<usize>().ok()?;
     Some(x * y)
 }
 
-fn parse(s: &str) -> u32 {
+fn parse(s: &str) -> usize {
     let chunks: Vec<&str> = s.split("mul(").collect();
-    let muls: Vec<u32> = chunks.iter().filter_map(|s| mul(s)).collect();
-    muls.iter().sum()
+    chunks.iter().filter_map(|s| mul(s)).sum()
 }
 
-fn val_split(s: &str) -> Vec<&str> {
-    let mut chunks: Vec<&str> = Vec::new();
+fn split_chunks(s: &str) -> Vec<&str> {
+    let mut parsed_chunks: Vec<&str> = Vec::new();
     let do_chunks: Vec<&str> = s.split_inclusive("do()").collect();
-    for do_chunk in do_chunks.iter() {
-        let dont_chunk: Vec<&str> = do_chunk.split_inclusive("don't()").collect();
-        for chunk in dont_chunk.iter() {
-            chunks.push(&chunk)
-        }
+    for chunk in do_chunks.iter() {
+        let chunks: Vec<&str> = chunk.split_inclusive("don't()").collect();
+        parsed_chunks.extend(chunks);
     }
-    chunks
+    parsed_chunks
 }
 
-fn val_parse(ss: Vec<&str>) -> u32 {
+fn val_parse(chunks: Vec<&str>) -> usize {
     let mut valid: bool = true;
-    let mut total: u32 = 0;
-    for s in ss.iter() {
+    let mut total: usize = 0;
+    for chunk in chunks.iter() {
         if valid {
-            total += parse(s);
+            total += parse(chunk);
         }
-        if s.ends_with("don't()") {
+        if chunk.ends_with("don't()") {
             valid = false;
-        } else if s.ends_with("do()") {
+        } else if chunk.ends_with("do()") {
             valid = true;
         }
     }
