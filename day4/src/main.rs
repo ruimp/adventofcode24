@@ -26,10 +26,10 @@ impl fmt::Display for Data {
 }
 
 fn main() -> Result<()> {
-    let file_path = String::from("test_input2.txt");
-    // let file_path = String::from("input.txt");
+    // let file_path = String::from("test_input2.txt");
+    let file_path = String::from("input.txt");
     let data = read_file(file_path)?;
-    println!("{}", &data);
+    // println!("{}", &data);
     let count_rows = scan_rows(&data);
     println!("Row count: {:?}", count_rows);
     let count_cols = scan_cols(&data);
@@ -38,6 +38,8 @@ fn main() -> Result<()> {
     println!("Diagonal count: {:?}", count_diags);
     let total_count = count_rows + count_cols + count_diags;
     println!("Total: {:?}", total_count);
+    let total_x = scan_x(&data);
+    println!("Total X-MAS: {:?}", total_x);
     Ok(())
 }
 
@@ -87,35 +89,51 @@ fn scan_diags(m: &Data) -> usize {
     let mut count: usize = 0;
     for i in 0..m.rows {
         let mut s = String::new();
+        let mut t = String::new();
         for j in 0..m.cols.min(i + 1) {
-            s.push(m.data[m.rows - i + j - 1][j])
+            s.push(m.data[i - j][j]);
+            t.push(m.data[m.rows - i + j - 1][j])
         }
         count += s.matches("XMAS").count();
         count += s.matches("SAMX").count();
+        count += t.matches("XMAS").count();
+        count += t.matches("SAMX").count();
     }
     for i in 0..m.cols - 1 {
         let mut s = String::new();
+        let mut t = String::new();
         for j in 0..m.rows.min(i + 1) {
-            s.push(m.data[j][m.rows - i + j - 1])
+            s.push(m.data[j][m.rows - i + j - 1]);
+            t.push(m.data[m.rows - j - 1][m.cols - i + j - 1]);
         }
         count += s.matches("XMAS").count();
         count += s.matches("SAMX").count();
-    }
-    for i in 0..m.rows {
-        let mut s = String::new();
-        for j in 0..m.cols.min(i + 1) {
-            s.push(m.data[i - j][j])
-        }
-        count += s.matches("XMAS").count();
-        count += s.matches("SAMX").count();
-    }
-    for i in 0..m.cols - 1 {
-        let mut s = String::new();
-        for j in 0..m.rows.min(i + 1) {
-            s.push(m.data[m.rows - j - 1][m.cols - i + j - 1])
-        }
-        count += s.matches("XMAS").count();
-        count += s.matches("SAMX").count();
+        count += t.matches("XMAS").count();
+        count += t.matches("SAMX").count();
     }
     count
+}
+
+fn scan_x(m: &Data) -> usize {
+    let mut count: usize = 0;
+    for i in 1..m.rows - 1 {
+        for j in 1..m.cols - 1 {
+            let mut s = String::new();
+            let mut t = String::new();
+            for k in 0..3 {
+                s.push(m.data[i + k - 1][j + k - 1]);
+                t.push(m.data[(i + 1).wrapping_sub(k)][j + k - 1]);
+            }
+            if is_x(s, t) {
+                count += 1
+            }
+        }
+    }
+    count
+}
+
+fn is_x(s: String, t: String) -> bool {
+    let s_check: bool = s == "MAS" || s == "SAM";
+    let t_check: bool = t == "MAS" || t == "SAM";
+    s_check && t_check
 }
