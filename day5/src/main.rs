@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Result};
 
@@ -8,18 +9,10 @@ fn main() -> Result<()> {
     let rules = get_rules(&file_name)?;
     let valid_count = get_valid_count(&updates, &rules);
     println!("Valid count: {:?}", valid_count);
+    let sorted_count = get_sorted_count(&updates, &rules);
+    println!("Sorted update: {:?}", sorted_count);
+    println!("Invalid count: {:?}", sorted_count - valid_count);
     Ok(())
-}
-
-fn get_valid_count(updates: &Vec<Vec<usize>>, rules: &Vec<Vec<usize>>) -> usize {
-    let mut count: usize = 0;
-    for update in updates.iter() {
-        let validity = filter_update(update, rules);
-        if validity {
-            count += update[update.len() / 2]
-        }
-    }
-    count
 }
 
 fn get_rules(file_name: &String) -> Result<Vec<Vec<usize>>> {
@@ -56,15 +49,32 @@ fn get_updates(file_name: &String) -> Result<Vec<Vec<usize>>> {
     Ok(updates)
 }
 
-fn filter_update(update: &Vec<usize>, rules: &Vec<Vec<usize>>) -> bool {
-    for (i, page) in update.iter().enumerate() {
-        for rule in rules.iter() {
-            if rule.first() == Some(page) {
-                if update[..i].contains(rule.last().unwrap()) {
-                    return false;
-                }
-            }
-        }
+fn compare(x: &usize, y: &usize, rules: &Vec<Vec<usize>>) -> Ordering {
+    match rules.iter().find(|&r| &r[0] == x && &r[1] == y) {
+        Some(_) => Ordering::Less,
+        None => Ordering::Greater,
     }
-    true
+}
+
+fn get_valid_count(updates: &Vec<Vec<usize>>, rules: &Vec<Vec<usize>>) -> usize {
+    updates
+        .iter()
+        .filter(|&u| {
+            u.iter().is_sorted_by(|a, b| match compare(a, b, &rules) {
+                Ordering::Less => true,
+                _ => false,
+            })
+        })
+        .map(|u| u[u.len() / 2])
+        .sum()
+}
+
+fn get_sorted_count(updates: &Vec<Vec<usize>>, rules: &Vec<Vec<usize>>) -> usize {
+    let mut count: usize = 0;
+    for update in updates.iter() {
+        let mut sorted_update = update.clone();
+        sorted_update.sort_by(|x, y| compare(x, y, &rules));
+        count += sorted_update[sorted_update.len() / 2]
+    }
+    count
 }
