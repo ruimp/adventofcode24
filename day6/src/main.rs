@@ -5,10 +5,10 @@ use std::io::{BufRead, BufReader, Result};
 
 #[derive(Debug)]
 struct Board {
-    // pos = (row, column)
+    // pos := (row, column)
     pos: (usize, usize),
-    // 0 = left  |  1 = down  |  2 = up  |  3 = right
     dimensions: (usize, usize),
+    // 0 = left  |  1 = up  |  2 = right  |  3 = down
     orientation: usize,
     obstructions: Vec<(usize, usize)>,
     path: Vec<(usize, usize)>,
@@ -25,9 +25,9 @@ impl fmt::Display for Board {
                 if self.pos == (i, j) {
                     match self.orientation {
                         0 => board.push('<'),
-                        1 => board.push('v'),
-                        2 => board.push('^'),
-                        3 => board.push('>'),
+                        1 => board.push('^'),
+                        2 => board.push('>'),
+                        3 => board.push('v'),
                         _ => panic!("Invalid orientation"),
                     }
                 } else if self.obstructions.contains(&(i, j)) {
@@ -45,74 +45,31 @@ impl fmt::Display for Board {
 }
 
 impl Board {
-    fn evolve(&mut self) {
+    fn get_move(&mut self) {
+        let mut move_row = self.pos.0;
+        let mut move_col = self.pos.1;
         match self.orientation {
-            0 => self.move_left(),
-            1 => self.move_down(),
-            2 => self.move_up(),
-            3 => self.move_right(),
-            _ => panic!("Invalid orientation"),
-        };
-    }
-
-    fn move_left(&mut self) {
-        let row = self.pos.0;
-        let col = self.pos.1.checked_sub(1).unwrap();
-        let next_move: (usize, usize) = (row, col);
-        if self.obstructions.contains(&next_move) {
-            // orientation => up
-            self.orientation = 2;
-        } else {
-            self.pos = next_move;
-            self.time += 1;
-            if !self.path.contains(&next_move) {
-                self.path.push(next_move)
-            }
+            // left
+            0 => move_col = move_col.checked_sub(1).unwrap(),
+            // up
+            1 => move_row = move_row.checked_sub(1).unwrap(),
+            // right
+            2 => move_col = move_col.checked_add(1).unwrap(),
+            // down
+            3 => move_row = move_row.checked_add(1).unwrap(),
+            _ => panic!("invalid orientation"),
         }
-    }
-
-    fn move_down(&mut self) {
-        let row = self.pos.0.checked_add(1).unwrap();
-        let col = self.pos.1;
-        let next_move: (usize, usize) = (row, col);
+        let next_move: (usize, usize) = (move_row, move_col);
+        self.time += 1;
         if self.obstructions.contains(&next_move) {
-            // orientation down => left
-            self.orientation = 0;
+            self.orientation = self
+                .orientation
+                .checked_add(1)
+                .unwrap()
+                .checked_rem(4)
+                .unwrap();
         } else {
             self.pos = next_move;
-            self.time += 1;
-            if !self.path.contains(&next_move) {
-                self.path.push(next_move)
-            }
-        }
-    }
-
-    fn move_up(&mut self) {
-        let row = self.pos.0.checked_sub(1).unwrap();
-        let col = self.pos.1;
-        let next_move: (usize, usize) = (row, col);
-        if self.obstructions.contains(&next_move) {
-            // orientation up => right
-            self.orientation = 3;
-        } else {
-            self.pos = next_move;
-            self.time += 1;
-            if !self.path.contains(&next_move) {
-                self.path.push(next_move)
-            }
-        }
-    }
-
-    fn move_right(&mut self) {
-        let row = self.pos.0;
-        let col = self.pos.1.checked_add(1).unwrap();
-        let next_move: (usize, usize) = (row, col);
-        if self.obstructions.contains(&next_move) {
-            // orientation right => down
-            self.orientation = 1;
-        } else {
-            self.pos = next_move;
-            self.time += 1;
             if !self.path.contains(&next_move) {
                 self.path.push(next_move)
             }
@@ -120,15 +77,11 @@ impl Board {
     }
 
     fn check_exit(&mut self) {
-        if (self.pos.1 == 0 && self.orientation == 0)
-            || (self.pos.0 == self.dimensions.0.checked_sub(1).unwrap() && self.orientation == 1)
-            || (self.pos.0 == 0 && self.orientation == 2)
-            || (self.pos.1 == self.dimensions.1.checked_sub(1).unwrap() && self.orientation == 3)
-        {
-            self.exit = true;
-        } else {
-            self.exit = false;
-        }
+        // Check boundaries left | up | right | down
+        self.exit = (self.pos.1 == 0 && self.orientation == 0)
+            || (self.pos.0 == 0 && self.orientation == 1)
+            || (self.pos.1 == self.dimensions.1.checked_sub(1).unwrap() && self.orientation == 2)
+            || (self.pos.0 == self.dimensions.0.checked_sub(1).unwrap() && self.orientation == 3)
     }
 }
 
@@ -152,15 +105,15 @@ fn get_board(filename: String) -> Result<Board> {
                     pos = (i, j);
                     orientation = 0;
                 }
-                'v' => {
+                '^' => {
                     pos = (i, j);
                     orientation = 1;
                 }
-                '^' => {
+                '>' => {
                     pos = (i, j);
                     orientation = 2;
                 }
-                '>' => {
+                'v' => {
                     pos = (i, j);
                     orientation = 3;
                 }
@@ -186,12 +139,12 @@ fn main() {
     let mut board = get_board(filename).unwrap();
     // println!("{}", &board);
     while !board.exit {
-        board.evolve();
+        board.get_move();
         board.check_exit();
         // println!("{}", &board);
         // thread::sleep(time::Duration::from_millis(150));
     }
-    println!("Total steps: {}", board.time);
+    println!("Time elapsed: {}", board.time);
     let count_pos = board.path.iter().count();
-    println!("Positions visited: {}", count_pos);
+    println!("Distinct positions: {}", count_pos);
 }
