@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "adventofcode24"
+name = "day1"
 version = "0.1.0"
