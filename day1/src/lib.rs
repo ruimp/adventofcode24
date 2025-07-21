@@ -30,6 +30,8 @@ pub fn read_file(file_path: impl AsRef<std::path::Path>) -> Result<Data> {
         if let (Some(a), Some(b)) = (nums.next(), nums.next()) {
             data.col1.push(a);
             data.col2.push(b);
+        } else {
+            eprintln!("skipped invalid line: {:?}", nums);
         }
     }
     Ok(data)
@@ -74,5 +76,19 @@ mod tests {
         let file_path = String::from("test_input.txt");
         let data = read_file(file_path).unwrap();
         assert_eq!(simi(&data), 31);
+    }
+
+    #[test]
+    fn test_empty_input() {
+        let file_path = String::from("empty.txt");
+        let data = read_file(file_path).unwrap();
+        assert_eq!(dist(&data), 0);
+    }
+
+    #[test]
+    fn test_bad_input() {
+        let file_path = String::from("bad_input.txt");
+        let data = read_file(file_path).unwrap();
+        assert_eq!(dist(&data), 4);
     }
 }
